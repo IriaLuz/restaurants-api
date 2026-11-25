@@ -14,12 +14,12 @@ import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } f
  * without changing a single line of the service. That's the whole point.
  */
 export interface RestaurantRepository {
+  /** Throws UniqueViolationError if the code is already taken. */
   create(restaurant: NewRestaurant): Promise<Restaurant>;
   findById(id: string): Promise<Restaurant | null>;
-  findByCode(code: string): Promise<Restaurant | null>;
   list(filter: RestaurantFilter): Promise<Restaurant[]>;
   /** Returns null if there was no restaurant with that id. */
   update(id: string, changes: RestaurantChanges): Promise<Restaurant | null>;
-  /** Returns false if there was no restaurant with that id. */
-  delete(id: string): Promise<boolean>;
+  /** Deletes it only if it exists AND is inactive, in one atomic step. Returns false if nothing was deleted. */
+  deleteIfInactive(id: string): Promise<boolean>;
 }

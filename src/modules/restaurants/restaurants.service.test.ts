@@ -29,6 +29,16 @@ describe("restaurantService", () => {
 
       await expect(service.createRestaurant({ ...camden, code: "CAMDEN" })).rejects.toThrow(ConflictError);
     });
+
+    it("accepts only one of two requests with the same code that arrive at the same time", async () => {
+      const results = await Promise.allSettled([
+        service.createRestaurant(camden),
+        service.createRestaurant({ ...camden, code: "Camden" }),
+      ]);
+
+      expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+      expect(results.find((result) => result.status === "rejected")?.reason).toBeInstanceOf(ConflictError);
+    });
   });
 
   describe("getRestaurant", () => {
@@ -65,6 +75,10 @@ describe("restaurantService", () => {
       const created = await service.createRestaurant(camden);
 
       await expect(service.deleteRestaurant(created.id)).rejects.toThrow(ConflictError);
+    });
+
+    it("throws NotFoundError when the restaurant doesn't exist", async () => {
+      await expect(service.deleteRestaurant("00000000-0000-0000-0000-000000000000")).rejects.toThrow(NotFoundError);
     });
 
     it("deletes an inactive restaurant", async () => {

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { UniqueViolationError } from "../../shared/db/errors.js";
 import type { Restaurant } from "./restaurants.types.js";
 import type { RestaurantRepository } from "./restaurants.repository.js";
 
@@ -8,12 +9,17 @@ import type { RestaurantRepository } from "./restaurants.repository.js";
  * It follows the same RestaurantRepository contract as the Postgres one,
  * so the service can't tell the difference. We use it in the unit tests:
  * they run in milliseconds and don't need a database.
+ *
+ * A good fake behaves like the real thing, so it also copies the UNIQUE constraint on "code".
  */
 export function createInMemoryRestaurantRepository(): RestaurantRepository {
   const restaurants = new Map<string, Restaurant>();
 
   return {
     async create(newRestaurant) {
+      if ([...restaurants.values()].some((existing) => existing.code === newRestaurant.code)) {
+        throw new UniqueViolationError("code");
+      }
       const restaurant: Restaurant = { ...newRestaurant, id: randomUUID(), createdAt: new Date() };
       restaurants.set(restaurant.id, restaurant);
       return restaurant;
@@ -21,10 +27,6 @@ export function createInMemoryRestaurantRepository(): RestaurantRepository {
 
     async findById(id) {
       return restaurants.get(id) ?? null;
-    },
-
-    async findByCode(code) {
-      return [...restaurants.values()].find((restaurant) => restaurant.code === code) ?? null;
     },
 
     async list(filter) {
@@ -42,7 +44,9 @@ export function createInMemoryRestaurantRepository(): RestaurantRepository {
       return updated;
     },
 
-    async delete(id) {
+    async deleteIfInactive(id) {
+      const restaurant = restaurants.get(id);
+      if (!restaurant || restaurant.isActive) return false;
       return restaurants.delete(id);
     },
   };

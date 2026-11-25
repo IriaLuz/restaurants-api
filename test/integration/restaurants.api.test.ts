@@ -42,6 +42,15 @@ describe("Restaurants API (integration)", () => {
     await request(app).post("/restaurants").send({ ...camden, code: "CAMDEN" }).expect(409);
   });
 
+  it("lets only one of two simultaneous requests with the same code through (the UNIQUE constraint)", async () => {
+    const [first, second] = await Promise.all([
+      request(app).post("/restaurants").send(camden),
+      request(app).post("/restaurants").send({ ...camden, code: "CAMDEN" }),
+    ]);
+
+    expect([first.status, second.status].sort()).toEqual([201, 409]);
+  });
+
   it("lists restaurants filtered by city", async () => {
     await request(app).post("/restaurants").send(camden).expect(201);
     await request(app).post("/restaurants").send({ code: "MCR1", name: "Piccadilly", city: "Manchester" }).expect(201);

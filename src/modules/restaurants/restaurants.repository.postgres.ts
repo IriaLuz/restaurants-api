@@ -1,5 +1,5 @@
 import pg from "pg";
-import { ConflictError } from "../../shared/errors.js";
+import { UniqueViolationError } from "../../shared/db/errors.js";
 import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 import type { RestaurantRepository } from "./restaurants.repository.js";
 
@@ -51,22 +51,17 @@ export function createPostgresRestaurantRepository(pool: pg.Pool): RestaurantRep
         if (!row) throw new Error("INSERT ... RETURNING returned no row"); // can't happen, but now TypeScript knows
         return toRestaurant(row);
       } catch (error) {
-        // Safety net: the service already checks for duplicate codes, but if two requests
-        // arrive at exactly the same time, both could pass that check. The UNIQUE constraint
-        // in the database stops the second one, and we turn that into a ConflictError (409).
+        // The UNIQUE constraint on "code" is what really guarantees no duplicates, even when two
+        // requests arrive at exactly the same time. We translate Postgres's error into our own
+        // data-layer error, so the service doesn't need to know Postgres error codes.
         if (error instanceof pg.DatabaseError && error.code === UNIQUE_VIOLATION) {
-          throw new ConflictError(`A restaurant with code ${restaurant.code} already exists`);
+          throw new UniqueViolationError("code");
         }
         throw error;
       }
     },
 
     findById,
-
-    async findByCode(code: string) {
-      const result = await pool.query<RestaurantRow>(`SELECT ${COLUMNS} FROM restaurants WHERE code = $1`, [code]);
-      return result.rows[0] ? toRestaurant(result.rows[0]) : null;
-    },
 
     async list(filter: RestaurantFilter) {
       // Only add the WHERE when a city was given. The city is still passed as a parameter ($1).
@@ -103,8 +98,10 @@ export function createPostgresRestaurantRepository(pool: pg.Pool): RestaurantRep
       return result.rows[0] ? toRestaurant(result.rows[0]) : null;
     },
 
-    async delete(id: string) {
-      const result = await pool.query("DELETE FROM restaurants WHERE id = $1", [id]);
+    async deleteIfInactive(id: string) {
+      // ONE statement, so the check and the delete happen together (atomically).
+      // Reading first and deleting after would leave a gap where someone could reactivate it.
+      const result = await pool.query("DELETE FROM restaurants WHERE id = $1 AND is_active = false", [id]);
       return (result.rowCount ?? 0) > 0;
     },
   };
