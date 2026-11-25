@@ -27,11 +27,12 @@ export function createRestaurantController(service: RestaurantService) {
       res.status(201).json(restaurant); // 201 Created
     },
 
-    // GET /restaurants?city=London
+    // GET /restaurants?city=London&limit=20&offset=0
     async list(req: Request, res: Response) {
-      const filter = listRestaurantsQuerySchema.parse(req.query);
-      const restaurants = await service.listRestaurants(filter);
-      res.json(restaurants); // 200 OK is the default
+      const { city, limit, offset } = listRestaurantsQuerySchema.parse(req.query);
+      const page = await service.listRestaurants({ city }, { limit, offset });
+      // 200 OK is the default. The list goes in "data", and "pagination" says which page this is.
+      res.json({ data: page.items, pagination: { limit, offset, total: page.total } });
     },
 
     // GET /restaurants/:id

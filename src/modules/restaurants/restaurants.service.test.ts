@@ -48,14 +48,28 @@ describe("restaurantService", () => {
   });
 
   describe("listRestaurants", () => {
+    const firstPage = { limit: 20, offset: 0 };
+
     it("filters by city and sorts by name", async () => {
-      await service.createRestaurant({ ...camden, code: "B", name: "Brixton", city: "London" });
-      await service.createRestaurant({ ...camden, code: "A", name: "Angel", city: "London" });
-      await service.createRestaurant({ ...camden, code: "M", name: "Manchester Piccadilly", city: "Manchester" });
+      await service.createRestaurant({ ...camden, code: "B1", name: "Brixton", city: "London" });
+      await service.createRestaurant({ ...camden, code: "A1", name: "Angel", city: "London" });
+      await service.createRestaurant({ ...camden, code: "M1", name: "Manchester Piccadilly", city: "Manchester" });
 
-      const london = await service.listRestaurants({ city: "London" });
+      const london = await service.listRestaurants({ city: "London" }, firstPage);
 
-      expect(london.map((restaurant) => restaurant.name)).toEqual(["Angel", "Brixton"]);
+      expect(london.items.map((restaurant) => restaurant.name)).toEqual(["Angel", "Brixton"]);
+      expect(london.total).toBe(2);
+    });
+
+    it("returns the page asked for, and the total", async () => {
+      for (const name of ["A", "B", "C", "D", "E"]) {
+        await service.createRestaurant({ ...camden, code: `R${name}`, name });
+      }
+
+      const page = await service.listRestaurants({}, { limit: 2, offset: 2 });
+
+      expect(page.items.map((restaurant) => restaurant.name)).toEqual(["C", "D"]);
+      expect(page.total).toBe(5);
     });
   });
 

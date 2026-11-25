@@ -1,5 +1,6 @@
 import { UniqueViolationError } from "../../shared/db/errors.js";
 import { ConflictError, NotFoundError } from "../../shared/errors.js";
+import type { Page, PageRequest } from "../../shared/pagination.js";
 import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 import type { RestaurantRepository } from "./restaurants.repository.js";
 
@@ -38,8 +39,8 @@ export function createRestaurantService(repository: RestaurantRepository) {
       }
     },
 
-    async listRestaurants(filter: RestaurantFilter): Promise<Restaurant[]> {
-      return repository.list(filter);
+    async listRestaurants(filter: RestaurantFilter, page: PageRequest): Promise<Page<Restaurant>> {
+      return repository.list(filter, page);
     },
 
     async getRestaurant(id: string): Promise<Restaurant> {

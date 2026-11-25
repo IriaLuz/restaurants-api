@@ -1,5 +1,6 @@
 import pg from "pg";
 import { UniqueViolationError } from "../../shared/db/errors.js";
+import type { PageRequest } from "../../shared/pagination.js";
 import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 import type { RestaurantRepository } from "./restaurants.repository.js";
 
@@ -63,15 +64,31 @@ export function createPostgresRestaurantRepository(pool: pg.Pool): RestaurantRep
 
     findById,
 
-    async list(filter: RestaurantFilter) {
-      // Only add the WHERE when a city was given. The city is still passed as a parameter ($1).
-      const result = filter.city
-        ? await pool.query<RestaurantRow>(
-            `SELECT ${COLUMNS} FROM restaurants WHERE city = $1 ORDER BY name`,
-            [filter.city],
-          )
-        : await pool.query<RestaurantRow>(`SELECT ${COLUMNS} FROM restaurants ORDER BY name`);
-      return result.rows.map(toRestaurant);
+    async list(filter: RestaurantFilter, page: PageRequest) {
+      // Build the WHERE from the filters that were sent: one condition and one value for each.
+      // The values are still parameters ($1, $2...), so this is safe. To add a filter, push another pair.
+      const conditions: string[] = [];
+      const values: unknown[] = [];
+      if (filter.city) {
+        values.push(filter.city);
+        conditions.push(`city = $${values.length}`);
+      }
+      const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+      // Two queries at the same time: the page itself, and how many match in total.
+      // "ORDER BY name, id": the id breaks ties between equal names, so a row can't jump between pages.
+      const [rows, count] = await Promise.all([
+        pool.query<RestaurantRow>(
+          `SELECT ${COLUMNS} FROM restaurants ${where}
+           ORDER BY name, id
+           LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+          [...values, page.limit, page.offset],
+        ),
+        pool.query<{ total: string }>(`SELECT COUNT(*) AS total FROM restaurants ${where}`, values),
+      ]);
+
+      // COUNT comes back as text, because it can be bigger than a JavaScript number.
+      return { items: rows.rows.map(toRestaurant), total: Number(count.rows[0]?.total ?? 0) };
     },
 
     async update(id: string, changes: RestaurantChanges) {

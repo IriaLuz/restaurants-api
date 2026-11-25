@@ -57,8 +57,24 @@ describe("Restaurants API (integration)", () => {
 
     const response = await request(app).get("/restaurants").query({ city: "Manchester" }).expect(200);
 
-    expect(response.body).toHaveLength(1);
-    expect(response.body[0].code).toBe("MCR1");
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].code).toBe("MCR1");
+    expect(response.body.pagination).toEqual({ limit: 20, offset: 0, total: 1 });
+  });
+
+  it("pages through the list with limit and offset", async () => {
+    for (const name of ["A", "B", "C"]) {
+      await request(app).post("/restaurants").send({ code: `R${name}`, name, city: "London" }).expect(201);
+    }
+
+    const response = await request(app).get("/restaurants").query({ limit: 2, offset: 2 }).expect(200);
+
+    expect(response.body.data.map((restaurant: { name: string }) => restaurant.name)).toEqual(["C"]);
+    expect(response.body.pagination).toEqual({ limit: 2, offset: 2, total: 3 });
+  });
+
+  it("returns 400 when limit is bigger than the maximum", async () => {
+    await request(app).get("/restaurants").query({ limit: 1000 }).expect(400);
   });
 
   it("updates only the fields sent, and rejects changing the code", async () => {

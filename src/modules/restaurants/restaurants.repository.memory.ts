@@ -29,10 +29,11 @@ export function createInMemoryRestaurantRepository(): RestaurantRepository {
       return restaurants.get(id) ?? null;
     },
 
-    async list(filter) {
-      return [...restaurants.values()]
+    async list(filter, page) {
+      const matching = [...restaurants.values()]
         .filter((restaurant) => !filter.city || restaurant.city === filter.city)
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+      return { items: matching.slice(page.offset, page.offset + page.limit), total: matching.length };
     },
 
     async update(id, changes) {
