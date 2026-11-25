@@ -72,6 +72,10 @@ describe("Restaurants API (integration)", () => {
     await request(app).get(url).expect(404);
   });
 
+  it("is ready when the database answers", async () => {
+    await request(app).get("/health/ready").expect(200, { status: "ready" });
+  });
+
   it("returns 400 for an id that isn't a UUID", async () => {
     await request(app).get("/restaurants/not-a-uuid").expect(400);
   });

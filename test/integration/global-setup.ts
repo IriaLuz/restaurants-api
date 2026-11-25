@@ -3,6 +3,7 @@
 // instead of letting every test fail with a confusing connection error.
 import "dotenv/config";
 import { createPool } from "../../src/shared/db/pool.js";
+import { createLogger } from "../../src/shared/logger.js";
 import { runMigrations } from "../../src/shared/db/run-migrations.js";
 
 export default async function setup(): Promise<void> {
@@ -11,7 +12,7 @@ export default async function setup(): Promise<void> {
     throw new Error("TEST_DATABASE_URL is not set. Copy .env.example to .env (cp .env.example .env).");
   }
 
-  const pool = createPool(url);
+  const pool = createPool(url, createLogger("silent"));
   try {
     await runMigrations(pool); // creates or updates the tables, once for the whole run
   } catch (error) {

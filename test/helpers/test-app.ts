@@ -16,8 +16,9 @@ export function createTestContext(): TestContext {
   const url = process.env.TEST_DATABASE_URL;
   if (!url) throw new Error("TEST_DATABASE_URL is not set");
 
-  const pool = createPool(url);
-  const app = createApp(createDependencies({ pool, logger: createLogger("silent") })); // no logs in test output
+  const logger = createLogger("silent"); // no logs in the test output
+  const pool = createPool(url, logger);
+  const app = createApp(createDependencies({ pool, logger }));
   return { pool, app };
 }
 

@@ -8,6 +8,7 @@ import { createRestaurantService } from "./modules/restaurants/restaurants.servi
  * THE COMPOSITION ROOT: the one place where the pieces get connected.
  *
  *   database pool -> repository -> service -> (controller and routes, inside createApp)
+ *   logger        -> everything that logs
  *
  * This is the only file that decides "the real app uses PostgreSQL".
  * To use a different database, you'd write a new repository and change ONE line here.
@@ -15,5 +16,11 @@ import { createRestaurantService } from "./modules/restaurants/restaurants.servi
 export function createDependencies({ pool, logger }: { pool: pg.Pool; logger: Logger }): AppDependencies {
   const restaurantRepository = createPostgresRestaurantRepository(pool);
   const restaurantService = createRestaurantService(restaurantRepository);
-  return { logger, restaurantService };
+  return {
+    logger,
+    checkDatabase: async () => {
+      await pool.query("SELECT 1");
+    },
+    restaurantService,
+  };
 }

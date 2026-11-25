@@ -8,9 +8,43 @@ import { createInMemoryRestaurantRepository } from "./modules/restaurants/restau
 import { createRestaurantService, type RestaurantService } from "./modules/restaurants/restaurants.service.js";
 import { createLogger } from "./shared/logger.js";
 
-function buildApp(restaurantService: RestaurantService = createRestaurantService(createInMemoryRestaurantRepository())) {
-  return createApp({ logger: createLogger("silent"), restaurantService });
+function buildApp({
+  restaurantService = createRestaurantService(createInMemoryRestaurantRepository()),
+  checkDatabase = async () => {},
+}: { restaurantService?: RestaurantService; checkDatabase?: () => Promise<void> } = {}) {
+  return createApp({ logger: createLogger("silent"), checkDatabase, restaurantService });
 }
+
+describe("health checks", () => {
+  it("GET /health answers 200 without touching the database", async () => {
+    const checkDatabase = async () => {
+      throw new Error("should not be called");
+    };
+
+    await request(buildApp({ checkDatabase })).get("/health").expect(200, { status: "ok" });
+  });
+
+  it("GET /health/ready answers 200 when the database answers", async () => {
+    await request(buildApp()).get("/health/ready").expect(200, { status: "ready" });
+  });
+
+  it("GET /health/ready answers 503 when the database doesn't answer", async () => {
+    const checkDatabase = async () => {
+      throw new Error("connection refused");
+    };
+
+    await request(buildApp({ checkDatabase })).get("/health/ready").expect(503, { status: "unavailable" });
+  });
+});
+
+describe("security headers", () => {
+  it("doesn't tell the world we use Express, and sends helmet's headers", async () => {
+    const response = await request(buildApp()).get("/health").expect(200);
+
+    expect(response.headers["x-powered-by"]).toBeUndefined();
+    expect(response.headers["x-content-type-options"]).toBe("nosniff");
+  });
+});
 
 describe("request ids", () => {
   it("creates an X-Request-Id for every request", async () => {
@@ -61,7 +95,7 @@ describe("HTTP errors", () => {
       },
     };
 
-    const response = await request(buildApp(brokenService)).get("/restaurants").expect(500);
+    const response = await request(buildApp({ restaurantService: brokenService })).get("/restaurants").expect(500);
 
     expect(response.body).toEqual({ error: "Something went wrong" });
   });
