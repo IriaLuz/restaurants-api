@@ -17,7 +17,7 @@ export interface AppDependencies {
 export function createApp({ restaurantService }: AppDependencies) {
   const app = express();
 
-  app.use(express.json()); // 1. turns the JSON body into a JavaScript object (req.body)
+  app.use(express.json({ limit: "100kb" })); // 1. turns the JSON body into a JavaScript object (req.body). Bigger bodies get a 413
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" }); // 2. a tiny endpoint to check the server is running

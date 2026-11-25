@@ -1,4 +1,4 @@
-import type pg from "pg";
+import pg from "pg";
 import { ConflictError } from "../../shared/errors.js";
 import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 import type { RestaurantRepository } from "./restaurants.repository.js";
@@ -54,7 +54,7 @@ export function createPostgresRestaurantRepository(pool: pg.Pool): RestaurantRep
         // Safety net: the service already checks for duplicate codes, but if two requests
         // arrive at exactly the same time, both could pass that check. The UNIQUE constraint
         // in the database stops the second one, and we turn that into a ConflictError (409).
-        if (isPostgresError(error) && error.code === UNIQUE_VIOLATION) {
+        if (error instanceof pg.DatabaseError && error.code === UNIQUE_VIOLATION) {
           throw new ConflictError(`A restaurant with code ${restaurant.code} already exists`);
         }
         throw error;
@@ -119,8 +119,4 @@ function toRestaurant(row: RestaurantRow): Restaurant {
     isActive: row.is_active,
     createdAt: row.created_at,
   };
-}
-
-function isPostgresError(error: unknown): error is { code: string } {
-  return typeof error === "object" && error !== null && "code" in error;
 }
