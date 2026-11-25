@@ -11,7 +11,7 @@ import type { Logger } from "./shared/logger.js";
  *   logger        -> everything that logs
  *
  * This is the only file that decides "the real app uses PostgreSQL".
- * To use a different database, you'd write a new repository and change ONE line here.
+ * Everything else only knows interfaces, which is why the tests can swap in the in-memory repository.
  */
 export function createDependencies({ pool, logger }: { pool: pg.Pool; logger: Logger }): AppDependencies {
   const restaurantRepository = createPostgresRestaurantRepository(pool);
