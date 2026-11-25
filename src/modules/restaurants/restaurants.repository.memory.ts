@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import type { Restaurant } from "./restaurant.js";
-import type { RestaurantRepository } from "./restaurantRepository.js";
+import type { Restaurant } from "./restaurants.types.js";
+import type { RestaurantRepository } from "./restaurants.repository.js";
 
 /**
  * A FAKE repository that keeps restaurants in a Map instead of a database.

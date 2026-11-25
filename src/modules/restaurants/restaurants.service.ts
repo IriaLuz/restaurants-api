@@ -1,6 +1,6 @@
-import { ConflictError, NotFoundError } from "../errors.js";
-import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurant.js";
-import type { RestaurantRepository } from "./restaurantRepository.js";
+import { ConflictError, NotFoundError } from "../../shared/errors.js";
+import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
+import type { RestaurantRepository } from "./restaurants.repository.js";
 
 /**
  * THE SERVICE: the business rules live here.

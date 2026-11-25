@@ -2,9 +2,9 @@
 // They use the in-memory repository, so there's no database and no HTTP.
 // That's why they run in a few milliseconds. Run them with: npm run test:unit
 import { beforeEach, describe, expect, it } from "vitest";
-import { ConflictError, NotFoundError } from "../errors.js";
-import { createInMemoryRestaurantRepository } from "./inMemoryRestaurantRepository.js";
-import { createRestaurantService, type RestaurantService } from "./restaurantService.js";
+import { ConflictError, NotFoundError } from "../../shared/errors.js";
+import { createInMemoryRestaurantRepository } from "./restaurants.repository.memory.js";
+import { createRestaurantService, type RestaurantService } from "./restaurants.service.js";
 
 describe("restaurantService", () => {
   let service: RestaurantService;

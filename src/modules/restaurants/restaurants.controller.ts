@@ -1,11 +1,11 @@
 import type { Request, Response } from "express";
-import type { RestaurantService } from "./restaurantService.js";
+import type { RestaurantService } from "./restaurants.service.js";
 import {
   createRestaurantSchema,
   listRestaurantsQuerySchema,
   restaurantIdParamsSchema,
   updateRestaurantSchema,
-} from "./restaurantSchemas.js";
+} from "./restaurants.schemas.js";
 
 /**
  * THE CONTROLLER: the bridge between HTTP and the service.

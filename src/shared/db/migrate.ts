@@ -1,7 +1,7 @@
 // Run with: npm run db:migrate
-import { loadConfig } from "../config.js";
+import { loadConfig } from "../../config.js";
 import { createPool } from "./pool.js";
-import { runMigrations } from "./runMigrations.js";
+import { runMigrations } from "./run-migrations.js";
 
 const config = loadConfig();
 const pool = createPool(config.DATABASE_URL);

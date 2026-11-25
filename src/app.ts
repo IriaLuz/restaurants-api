@@ -1,8 +1,8 @@
 import express from "express";
-import { errorHandler } from "./http/errorHandler.js";
-import { createRestaurantController } from "./restaurants/restaurantController.js";
-import { createRestaurantRouter } from "./restaurants/restaurantRoutes.js";
-import type { RestaurantService } from "./restaurants/restaurantService.js";
+import { errorHandler } from "./shared/http/error-handler.js";
+import { createRestaurantController } from "./modules/restaurants/restaurants.controller.js";
+import { createRestaurantRouter } from "./modules/restaurants/restaurants.routes.js";
+import type { RestaurantService } from "./modules/restaurants/restaurants.service.js";
 
 export interface AppDependencies {
   restaurantService: RestaurantService;

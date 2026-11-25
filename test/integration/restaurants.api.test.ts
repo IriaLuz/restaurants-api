@@ -6,10 +6,10 @@ import "dotenv/config";
 import type pg from "pg";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createApp } from "../src/app.js";
-import { createDependencies } from "../src/compositionRoot.js";
-import { createPool } from "../src/db/pool.js";
-import { runMigrations } from "../src/db/runMigrations.js";
+import { createApp } from "../../src/app.js";
+import { createDependencies } from "../../src/composition-root.js";
+import { createPool } from "../../src/shared/db/pool.js";
+import { runMigrations } from "../../src/shared/db/run-migrations.js";
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 

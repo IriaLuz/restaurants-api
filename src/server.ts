@@ -1,8 +1,8 @@
 // The entry point: npm run dev (or npm start after npm run build).
 import { createApp } from "./app.js";
-import { createDependencies } from "./compositionRoot.js";
+import { createDependencies } from "./composition-root.js";
 import { loadConfig } from "./config.js";
-import { createPool } from "./db/pool.js";
+import { createPool } from "./shared/db/pool.js";
 
 const config = loadConfig(); // stops here with a clear message if .env is wrong
 const pool = createPool(config.DATABASE_URL);

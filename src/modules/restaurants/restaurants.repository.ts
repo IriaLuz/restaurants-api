@@ -1,4 +1,4 @@
-import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurant.js";
+import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 
 /**
  * THE REPOSITORY "CONTRACT" (also called a "port" or an interface).
@@ -7,8 +7,8 @@ import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } f
  * The service only knows this interface. It never imports "pg" or writes SQL.
  *
  * There are two implementations of this contract in this project:
- *   - postgresRestaurantRepository.ts -> the real one, which talks to PostgreSQL
- *   - inMemoryRestaurantRepository.ts -> a fake one that keeps data in a Map, used by the unit tests
+ *   - restaurants.repository.postgres.ts -> the real one, which talks to PostgreSQL
+ *   - restaurants.repository.memory.ts   -> a fake one that keeps data in a Map, used by the unit tests
  *
  * Because the service only depends on this interface, we can swap one for the other
  * without changing a single line of the service. That's the whole point.

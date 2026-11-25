@@ -1,7 +1,7 @@
 import type pg from "pg";
 import type { AppDependencies } from "./app.js";
-import { createPostgresRestaurantRepository } from "./restaurants/postgresRestaurantRepository.js";
-import { createRestaurantService } from "./restaurants/restaurantService.js";
+import { createPostgresRestaurantRepository } from "./modules/restaurants/restaurants.repository.postgres.js";
+import { createRestaurantService } from "./modules/restaurants/restaurants.service.js";
 
 /**
  * THE COMPOSITION ROOT: the one place where the pieces get connected.

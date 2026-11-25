@@ -1,7 +1,7 @@
 import type pg from "pg";
-import { ConflictError } from "../errors.js";
-import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurant.js";
-import type { RestaurantRepository } from "./restaurantRepository.js";
+import { ConflictError } from "../../shared/errors.js";
+import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
+import type { RestaurantRepository } from "./restaurants.repository.js";
 
 /**
  * THE REPOSITORY (real implementation): the only file that knows about SQL and PostgreSQL.
