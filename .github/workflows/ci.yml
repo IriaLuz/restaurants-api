@@ -1,0 +1,46 @@
+# CONTINUOUS INTEGRATION: on every push to main and every pull request, GitHub runs
+# the same checks you run locally with "npm run validate", against a real PostgreSQL.
+# If anything fails, the PR shows a red cross, so broken code doesn't get merged.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    # A throwaway PostgreSQL, only for this run. Same version as docker-compose.yml.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: practice
+          POSTGRES_PASSWORD: practice
+          POSTGRES_DB: restaurants_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U practice"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://practice:practice@localhost:5432/restaurants_test
+      TEST_DATABASE_URL: postgresql://practice:practice@localhost:5432/restaurants_test
+      LOG_LEVEL: silent
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc # the same Node version as on your computer
+          cache: npm
+      - run: npm ci # installs exactly what package-lock.json says
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build # makes sure the production build still compiles
