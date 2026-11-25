@@ -3,8 +3,11 @@
 
 @baseUrl = http://localhost:3000
 
-### Is the server running?
+### Is the process alive? (liveness, doesn't touch the database)
 GET {{baseUrl}}/health
+
+### Can it serve requests? (readiness, checks the database: 200 or 503)
+GET {{baseUrl}}/health/ready
 
 ### Create a restaurant (201). The code is saved in uppercase.
 POST {{baseUrl}}/restaurants
@@ -45,11 +48,18 @@ Content-Type: application/json
   "name": ""
 }
 
-### List all restaurants (200)
+### List restaurants: the first page, 20 by default (200)
 GET {{baseUrl}}/restaurants
 
-### List restaurants in one city (200)
-GET {{baseUrl}}/restaurants?city=London
+### List restaurants in one city, 10 per page, second page (200)
+GET {{baseUrl}}/restaurants?city=London&limit=10&offset=10
+
+### A limit over 100 (400)
+GET {{baseUrl}}/restaurants?limit=1000
+
+### Send your own request id: it comes back in the X-Request-Id header and appears in the logs
+GET {{baseUrl}}/restaurants
+X-Request-Id: my-test-request-1
 
 ### Get one restaurant. Paste an id from the responses above.
 GET {{baseUrl}}/restaurants/PASTE-AN-ID-HERE

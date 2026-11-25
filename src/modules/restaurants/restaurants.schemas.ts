@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { paginationQuerySchema } from "../../shared/pagination.js";
 
 // VALIDATION: everything that comes from outside (the request body, the URL, the query string)
 // is checked here with Zod before it reaches the service.
@@ -9,7 +10,8 @@ export const restaurantIdParamsSchema = z.object({
   id: z.uuid("The id must be a valid UUID"),
 });
 
-export const listRestaurantsQuerySchema = z.object({
+// GET /restaurants?city=London&limit=20&offset=0
+export const listRestaurantsQuerySchema = paginationQuerySchema.extend({
   city: z.string().trim().min(1).optional(),
 });
 

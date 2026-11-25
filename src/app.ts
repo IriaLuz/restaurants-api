@@ -1,10 +1,16 @@
 import express from "express";
-import { errorHandler } from "./http/errorHandler.js";
-import { createRestaurantController } from "./restaurants/restaurantController.js";
-import { createRestaurantRouter } from "./restaurants/restaurantRoutes.js";
-import type { RestaurantService } from "./restaurants/restaurantService.js";
+import helmet from "helmet";
+import { createHealthRouter } from "./modules/health/health.routes.js";
+import { createRestaurantController } from "./modules/restaurants/restaurants.controller.js";
+import { createRestaurantRouter } from "./modules/restaurants/restaurants.routes.js";
+import type { RestaurantService } from "./modules/restaurants/restaurants.service.js";
+import { errorHandler } from "./shared/http/error-handler.js";
+import { createRequestLogger } from "./shared/http/request-logger.js";
+import type { Logger } from "./shared/logger.js";
 
 export interface AppDependencies {
+  logger: Logger;
+  checkDatabase: () => Promise<void>;
   restaurantService: RestaurantService;
 }
 
@@ -14,23 +20,23 @@ export interface AppDependencies {
  *
  * Order matters in Express: a request goes through these in order, top to bottom.
  */
-export function createApp({ restaurantService }: AppDependencies) {
+export function createApp({ logger, checkDatabase, restaurantService }: AppDependencies) {
   const app = express();
 
-  app.use(express.json()); // 1. turns the JSON body into a JavaScript object (req.body)
+  app.use(createRequestLogger(logger)); // 1. gives each request an id and logs it when it finishes
+  app.use(helmet()); // 2. security headers, and hides "X-Powered-By: Express"
+  app.use(express.json({ limit: "100kb" })); // 3. turns the JSON body into a JavaScript object (req.body). Bigger bodies get a 413
 
-  app.get("/health", (_req, res) => {
-    res.json({ status: "ok" }); // 2. a tiny endpoint to check the server is running
-  });
+  app.use("/health", createHealthRouter({ logger, checkDatabase })); // 4. is it alive? is it ready?
 
   const restaurantController = createRestaurantController(restaurantService);
-  app.use("/restaurants", createRestaurantRouter(restaurantController)); // 3. our feature
+  app.use("/restaurants", createRestaurantRouter(restaurantController)); // 5. our feature
 
   app.use((_req, res) => {
-    res.status(404).json({ error: "Route not found" }); // 4. no route matched
+    res.status(404).json({ error: "Route not found" }); // 6. no route matched
   });
 
-  app.use(errorHandler); // 5. always last: catches errors from everything above
+  app.use(errorHandler); // 7. always last: catches errors from everything above
 
   return app;
 }

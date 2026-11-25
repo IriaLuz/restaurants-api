@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { RestaurantController } from "./restaurantController.js";
+import type { RestaurantController } from "./restaurants.controller.js";
 
 /**
  * THE ROUTES: a simple map of "this URL + this HTTP method -> this controller handler".

@@ -1,7 +1,7 @@
 // YOUR EXERCISE (see EJERCICIO.md).
 // These are the behaviours to build. "it.todo" shows them as pending, without failing.
 // Turn each one into a real test as you build the feature, then move the unit ones
-// to src/openingHours/openingHoursService.test.ts and the API ones to test/openingHours.integration.test.ts.
+// to src/modules/opening-hours/opening-hours.service.test.ts and the API ones to test/integration/opening-hours.api.test.ts.
 import { describe, it } from "vitest";
 
 describe("openingHoursService (unit, with in-memory repositories)", () => {

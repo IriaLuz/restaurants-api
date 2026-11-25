@@ -2,6 +2,9 @@
 #   docker compose up -d     -> start the database in the background
 #   docker compose down      -> stop it (your data stays in the "pgdata" volume)
 #
+# The port on YOUR computer comes from DB_PORT in .env (5432 if it isn't set).
+# If you already have another PostgreSQL on 5432, set DB_PORT=5434 in .env, and use 5434 in the URLs too.
+#
 # It creates two databases:
 #   - restaurants       -> the one the app uses when you run "npm run dev"
 #   - restaurants_test  -> the one the integration tests use (they wipe it every time)
@@ -13,7 +16,12 @@ services:
       POSTGRES_PASSWORD: practice
       POSTGRES_DB: restaurants
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432" # your computer's port : the container's port
+    healthcheck: # "docker compose ps" shows "healthy" once it accepts connections
+      test: ["CMD-SHELL", "pg_isready -U practice"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql

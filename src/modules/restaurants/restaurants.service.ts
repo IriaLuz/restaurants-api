@@ -1,6 +1,8 @@
-import { ConflictError, NotFoundError } from "../errors.js";
-import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurant.js";
-import type { RestaurantRepository } from "./restaurantRepository.js";
+import { UniqueViolationError } from "../../shared/db/errors.js";
+import { ConflictError, NotFoundError } from "../../shared/errors.js";
+import type { Page, PageRequest } from "../../shared/pagination.js";
+import type { RestaurantRepository } from "./restaurants.repository.js";
+import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 
 /**
  * THE SERVICE: the business rules live here.
@@ -24,16 +26,21 @@ export function createRestaurantService(repository: RestaurantRepository) {
     async createRestaurant(input: NewRestaurant): Promise<Restaurant> {
       const code = normaliseCode(input.code); // rule 1
 
-      const existing = await repository.findByCode(code);
-      if (existing) {
-        throw new ConflictError(`A restaurant with code ${code} already exists`); // rule 2
+      // Rule 2: we don't check "does it exist?" first and insert after. Two requests at the same
+      // time could both pass that check. The database's UNIQUE constraint is the real guarantee,
+      // so we just try to insert, and translate the refusal into a business error.
+      try {
+        return await repository.create({ ...input, code });
+      } catch (error) {
+        if (error instanceof UniqueViolationError) {
+          throw new ConflictError(`A restaurant with code ${code} already exists`);
+        }
+        throw error;
       }
-
-      return repository.create({ ...input, code });
     },
 
-    async listRestaurants(filter: RestaurantFilter): Promise<Restaurant[]> {
-      return repository.list(filter);
+    async listRestaurants(filter: RestaurantFilter, page: PageRequest): Promise<Page<Restaurant>> {
+      return repository.list(filter, page);
     },
 
     async getRestaurant(id: string): Promise<Restaurant> {
@@ -49,14 +56,14 @@ export function createRestaurantService(repository: RestaurantRepository) {
     },
 
     async deleteRestaurant(id: string): Promise<void> {
+      // Rule 3, done atomically: the repository deletes it only if it's inactive, in one step.
+      const deleted = await repository.deleteIfInactive(id);
+      if (deleted) return;
+
+      // Nothing was deleted. Find out why, to give the right error.
       const restaurant = await repository.findById(id);
       if (!restaurant) throw new NotFoundError("Restaurant");
-
-      if (restaurant.isActive) {
-        throw new ConflictError("An active restaurant can't be deleted. Deactivate it first."); // rule 3
-      }
-
-      await repository.delete(id);
+      throw new ConflictError("An active restaurant can't be deleted. Deactivate it first.");
     },
   };
 }

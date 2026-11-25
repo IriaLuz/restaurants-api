@@ -1,6 +1,6 @@
 // Errors that describe WHAT went wrong, in business terms.
 // The service throws them. It doesn't know about HTTP status codes.
-// The error handler (src/http/errorHandler.ts) decides which status code each one becomes.
+// The error handler (src/shared/http/error-handler.ts) decides which status code each one becomes.
 
 /** Something the user asked for doesn't exist. Becomes a 404. */
 export class NotFoundError extends Error {

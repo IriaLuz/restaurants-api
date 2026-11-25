@@ -1,7 +1,8 @@
-import type pg from "pg";
-import { ConflictError } from "../errors.js";
-import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurant.js";
-import type { RestaurantRepository } from "./restaurantRepository.js";
+import pg from "pg";
+import { UniqueViolationError } from "../../shared/db/errors.js";
+import type { PageRequest } from "../../shared/pagination.js";
+import type { RestaurantRepository } from "./restaurants.repository.js";
+import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 
 /**
  * THE REPOSITORY (real implementation): the only file that knows about SQL and PostgreSQL.
@@ -47,13 +48,15 @@ export function createPostgresRestaurantRepository(pool: pg.Pool): RestaurantRep
            RETURNING ${COLUMNS}`, // RETURNING gives us the saved row back, including id and created_at
           [restaurant.code, restaurant.name, restaurant.city, restaurant.isActive],
         );
-        return toRestaurant(result.rows[0]);
+        const row = result.rows[0];
+        if (!row) throw new Error("INSERT ... RETURNING returned no row"); // can't happen, but now TypeScript knows
+        return toRestaurant(row);
       } catch (error) {
-        // Safety net: the service already checks for duplicate codes, but if two requests
-        // arrive at exactly the same time, both could pass that check. The UNIQUE constraint
-        // in the database stops the second one, and we turn that into a ConflictError (409).
-        if (isPostgresError(error) && error.code === UNIQUE_VIOLATION) {
-          throw new ConflictError(`A restaurant with code ${restaurant.code} already exists`);
+        // The UNIQUE constraint on "code" is what really guarantees no duplicates, even when two
+        // requests arrive at exactly the same time. We translate Postgres's error into our own
+        // data-layer error, so the service doesn't need to know Postgres error codes.
+        if (error instanceof pg.DatabaseError && error.code === UNIQUE_VIOLATION) {
+          throw new UniqueViolationError("code");
         }
         throw error;
       }
@@ -61,20 +64,31 @@ export function createPostgresRestaurantRepository(pool: pg.Pool): RestaurantRep
 
     findById,
 
-    async findByCode(code: string) {
-      const result = await pool.query<RestaurantRow>(`SELECT ${COLUMNS} FROM restaurants WHERE code = $1`, [code]);
-      return result.rows[0] ? toRestaurant(result.rows[0]) : null;
-    },
+    async list(filter: RestaurantFilter, page: PageRequest) {
+      // Build the WHERE from the filters that were sent: one condition and one value for each.
+      // The values are still parameters ($1, $2...), so this is safe. To add a filter, push another pair.
+      const conditions: string[] = [];
+      const values: unknown[] = [];
+      if (filter.city) {
+        values.push(filter.city);
+        conditions.push(`city = $${values.length}`);
+      }
+      const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    async list(filter: RestaurantFilter) {
-      // Only add the WHERE when a city was given. The city is still passed as a parameter ($1).
-      const result = filter.city
-        ? await pool.query<RestaurantRow>(
-            `SELECT ${COLUMNS} FROM restaurants WHERE city = $1 ORDER BY name`,
-            [filter.city],
-          )
-        : await pool.query<RestaurantRow>(`SELECT ${COLUMNS} FROM restaurants ORDER BY name`);
-      return result.rows.map(toRestaurant);
+      // Two queries at the same time: the page itself, and how many match in total.
+      // "ORDER BY name, id": the id breaks ties between equal names, so a row can't jump between pages.
+      const [rows, count] = await Promise.all([
+        pool.query<RestaurantRow>(
+          `SELECT ${COLUMNS} FROM restaurants ${where}
+           ORDER BY name, id
+           LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+          [...values, page.limit, page.offset],
+        ),
+        pool.query<{ total: string }>(`SELECT COUNT(*) AS total FROM restaurants ${where}`, values),
+      ]);
+
+      // COUNT comes back as text, because it can be bigger than a JavaScript number.
+      return { items: rows.rows.map(toRestaurant), total: Number(count.rows[0]?.total ?? 0) };
     },
 
     async update(id: string, changes: RestaurantChanges) {
@@ -101,8 +115,10 @@ export function createPostgresRestaurantRepository(pool: pg.Pool): RestaurantRep
       return result.rows[0] ? toRestaurant(result.rows[0]) : null;
     },
 
-    async delete(id: string) {
-      const result = await pool.query("DELETE FROM restaurants WHERE id = $1", [id]);
+    async deleteIfInactive(id: string) {
+      // ONE statement, so the check and the delete happen together (atomically).
+      // Reading first and deleting after would leave a gap where someone could reactivate it.
+      const result = await pool.query("DELETE FROM restaurants WHERE id = $1 AND is_active = false", [id]);
       return (result.rowCount ?? 0) > 0;
     },
   };
@@ -117,8 +133,4 @@ function toRestaurant(row: RestaurantRow): Restaurant {
     isActive: row.is_active,
     createdAt: row.created_at,
   };
-}
-
-function isPostgresError(error: unknown): error is { code: string } {
-  return typeof error === "object" && error !== null && "code" in error;
 }

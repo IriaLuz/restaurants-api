@@ -1,6 +1,6 @@
 # Ejercicio: horarios de apertura
 
-Ahora te toca a ti. Vas a añadir **horarios de apertura** a los restaurantes, siguiendo exactamente la misma estructura que `src/restaurants/`. Es muy parecido a lo que hace el producto **Hours** del equipo CPEM.
+Ahora te toca a ti. Vas a añadir **horarios de apertura** a los restaurantes, siguiendo exactamente la misma estructura que `src/modules/restaurants/`. Es muy parecido a lo que hace el producto **Hours** del equipo CPEM.
 
 No hay solución en el repo a propósito. Intenta hacerlo sin IA primero. Si te atascas, abre las pistas de cada paso, que van de menos a más.
 
@@ -20,10 +20,11 @@ Añade un filtro por estado: `GET /restaurants?active=true` devuelve solo los ac
 
 Te obliga a tocar todas las capas con un cambio pequeño:
 
-- [ ] `restaurantSchemas.ts`: añade `active` a `listRestaurantsQuerySchema`. Ojo: en la URL llega como el texto `"true"`, no como booleano.
-- [ ] `restaurant.ts`: añade `isActive?: boolean` a `RestaurantFilter`.
-- [ ] `inMemoryRestaurantRepository.ts` y `postgresRestaurantRepository.ts`: aplica el filtro.
-- [ ] Un test unitario y uno de integración.
+- [ ] `restaurants.schemas.ts`: añade `active` a `listRestaurantsQuerySchema`. Ojo: en la URL llega como el texto `"true"`, no como booleano.
+- [ ] `restaurants.types.ts`: añade `isActive?: boolean` a `RestaurantFilter`.
+- [ ] `restaurants.controller.ts`: pásalo al service junto a `city`.
+- [ ] `restaurants.repository.memory.ts` y `restaurants.repository.postgres.ts`: aplica el filtro.
+- [ ] Un test unitario y uno de integración. Recuerda que la lista llega en `response.body.data`.
 
 <details>
 <summary>Pista 1</summary>
@@ -34,7 +35,7 @@ Para convertir el texto `"true"` o `"false"` en booleano, puedes usar `z.enum(["
 <details>
 <summary>Pista 2</summary>
 
-En el repositorio de Postgres, ahora puede haber dos filtros a la vez (ciudad y estado). En lugar de un `if` para cada combinación, construye una lista de condiciones y otra de valores: `conditions.push("city = $" + (values.length + 1)); values.push(filter.city);`, y al final `WHERE ` + `conditions.join(" AND ")` si la lista no está vacía.
+En el repositorio de Postgres, `list` ya construye el `WHERE` con una lista de condiciones y otra de valores. Mira cómo lo hace con `city` y añade tu condición igual. Fíjate en que `false` también es un valor válido: `if (filter.isActive)` se saltaría `?active=false`. Usa `if (filter.isActive !== undefined)`.
 </details>
 
 ---
@@ -88,34 +89,34 @@ Responde `200` con `{ "isOpen": true }` o `{ "isOpen": false }`.
 
 ### Errores esperados
 
-| Situación | Respuesta |
-| --- | --- |
-| El restaurante no existe | 404 |
-| El id no es un UUID | 400 |
-| `dayOfWeek` fuera de 1–7, o una hora con formato incorrecto | 400 |
-| `opensAt` no es anterior a `closesAt` | 400 |
-| Dos franjas del mismo día se solapan | 400 |
-| Falta `at` en `/is-open`, o no es una fecha válida | 400 |
+| Situación                                                   | Respuesta |
+| ----------------------------------------------------------- | --------- |
+| El restaurante no existe                                    | 404       |
+| El id no es un UUID                                         | 400       |
+| `dayOfWeek` fuera de 1–7, o una hora con formato incorrecto | 400       |
+| `opensAt` no es anterior a `closesAt`                       | 400       |
+| Dos franjas del mismo día se solapan                        | 400       |
+| Falta `at` en `/is-open`, o no es una fecha válida          | 400       |
 
 ### Archivos que vas a crear
 
-Sigue la misma estructura que `src/restaurants/`:
+Sigue la misma estructura que `src/modules/restaurants/`:
 
 ```text
 db/migrations/002_create_opening_hours.sql
-src/openingHours/openingHours.ts                         tipos
-src/openingHours/openingHoursRepository.ts               el contrato (interfaz)
-src/openingHours/inMemoryOpeningHoursRepository.ts       para los tests unitarios
-src/openingHours/postgresOpeningHoursRepository.ts       el SQL
-src/openingHours/openingHoursService.ts                  las reglas
-src/openingHours/openingHoursService.test.ts             tests unitarios
-src/openingHours/openingHoursSchemas.ts                  validación con Zod
-src/openingHours/openingHoursController.ts
-src/openingHours/openingHoursRoutes.ts
-test/openingHours.integration.test.ts                    tests de integración
+src/modules/opening-hours/opening-hours.types.ts                 tipos
+src/modules/opening-hours/opening-hours.repository.ts            el contrato (interfaz)
+src/modules/opening-hours/opening-hours.repository.memory.ts     para los tests unitarios
+src/modules/opening-hours/opening-hours.repository.postgres.ts   el SQL
+src/modules/opening-hours/opening-hours.service.ts               las reglas
+src/modules/opening-hours/opening-hours.service.test.ts          tests unitarios
+src/modules/opening-hours/opening-hours.schemas.ts               validación con Zod
+src/modules/opening-hours/opening-hours.controller.ts
+src/modules/opening-hours/opening-hours.routes.ts
+test/integration/opening-hours.api.test.ts                       tests de integración
 ```
 
-Y cambiarás `compositionRoot.ts` y `app.ts` para conectarlo todo.
+Y cambiarás `composition-root.ts` y `app.ts` para conectarlo todo.
 
 ### Pasos sugeridos (de dentro hacia fuera)
 
@@ -129,7 +130,7 @@ Columnas: `id`, `restaurant_id` (que apunte a `restaurants(id)`), `day_of_week`,
 
 **Paso 2. Tipos y contrato.** Define `OpeningHoursSlot` y la interfaz `OpeningHoursRepository`. ¿Qué operaciones necesita el service? Probablemente "sustituir los horarios de un restaurante" y "leer los horarios de un restaurante".
 
-**Paso 3. El service y sus tests unitarios.** Este es el corazón del ejercicio. Empieza por los tests: tienes la lista en `test/openingHours.todo.test.ts`.
+**Paso 3. El service y sus tests unitarios.** Este es el corazón del ejercicio. Empieza por los tests: tienes la lista en `test/opening-hours.todo.test.ts`.
 
 <details>
 <summary>Pista 1: cómo comparar horas</summary>
@@ -154,7 +155,7 @@ El formato de cada franja (día válido, `"HH:MM"`, apertura antes que cierre, s
 <details>
 <summary>Pista: sustituir todo de forma segura</summary>
 
-"Borrar los horarios viejos e insertar los nuevos" son dos pasos. Si el segundo falla, el restaurante se quedaría sin horarios. Usa una **transacción**: mira cómo lo hace `src/db/runMigrations.ts` con `BEGIN`, `COMMIT`, `ROLLBACK` y `client.release()`.
+"Borrar los horarios viejos e insertar los nuevos" son dos pasos. Si el segundo falla, el restaurante se quedaría sin horarios. Usa una **transacción**: mira cómo lo hace `src/shared/db/run-migrations.ts` con `pool.connect()`, `BEGIN`, `COMMIT`, `ROLLBACK` y `client.release()`. Ojo: todas las consultas de la transacción tienen que ir por el mismo `client`, no por `pool.query`.
 
 Postgres devuelve las columnas `TIME` como `"11:30:00"`. Recórtalo a `"11:30"` al convertir la fila.
 </details>
@@ -167,14 +168,13 @@ Postgres devuelve las columnas `TIME` como `"11:30:00"`. Recórtalo a `"11:30"` 
 Puedes crear un router propio y montarlo en `app.ts` con `app.use("/restaurants", openingHoursRouter)`. Dentro, las rutas serían `"/:id/opening-hours"` y `"/:id/is-open"`. Express permite montar dos routers en la misma ruta base.
 </details>
 
-**Paso 6. Conectarlo.** Crea el repositorio y el service en `compositionRoot.ts`, y pásalos a `createApp`.
+**Paso 6. Conectarlo.** Crea el repositorio y el service en `composition-root.ts`, añádelo a `AppDependencies` en `app.ts` y monta el router.
 
-**Paso 7. Tests de integración,** copiando el estilo de `test/restaurants.integration.test.ts`.
+**Paso 7. Tests de integración,** copiando el estilo de `test/integration/restaurants.api.test.ts`: `createTestContext()` te da la app y el pool, y `resetDatabase(pool)` vacía las tablas antes de cada test. Ya usa `TRUNCATE ... CASCADE`, así que también vaciará tu tabla nueva.
 
 ### Cuándo está terminado
 
-- [ ] `npm run typecheck` sin errores.
-- [ ] `npm test` en verde, con tests nuevos unitarios y de integración.
+- [ ] `npm run validate` en verde: lint, tipos y todos los tests, con tests nuevos unitarios y de integración.
 - [ ] Puedes probar los tres endpoints a mano con `requests.http`.
 - [ ] Cada error de la tabla devuelve el código esperado.
 
@@ -197,6 +197,7 @@ Mírala cuando termines, como haría un Tech Lead en una revisión:
 - [ ] ¿El service no sabe nada de HTTP ni de SQL?
 - [ ] ¿Todo el SQL usa parámetros (`$1`) y ningún valor pegado al texto?
 - [ ] ¿El `PUT` usa una transacción?
+- [ ] ¿Hay alguna regla de "comprobar y luego actuar" que debería ser atómica?
 - [ ] ¿Los tests unitarios usan el repositorio en memoria y no tocan la base de datos?
 - [ ] ¿Probaste los bordes: abrir a las 11:30 en punto, cerrar a las 22:00 en punto, un día sin horario o un restaurante inactivo?
 - [ ] ¿Puedes explicar en 30 segundos, en inglés, por qué cada cosa está en su capa?

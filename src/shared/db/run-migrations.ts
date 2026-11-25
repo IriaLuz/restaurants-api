@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import type pg from "pg";
 
 // The .sql files live in db/migrations at the project root.
-// From src/db (or dist/db after building) that is two folders up.
-const migrationsFolder = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "db", "migrations");
+// From src/shared/db (or dist/shared/db after building) that is three folders up.
+const migrationsFolder = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "db", "migrations");
 
 /**
  * Runs every .sql file in db/migrations that hasn't run yet, in name order.
