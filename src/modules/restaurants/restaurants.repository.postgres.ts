@@ -47,7 +47,9 @@ export function createPostgresRestaurantRepository(pool: pg.Pool): RestaurantRep
            RETURNING ${COLUMNS}`, // RETURNING gives us the saved row back, including id and created_at
           [restaurant.code, restaurant.name, restaurant.city, restaurant.isActive],
         );
-        return toRestaurant(result.rows[0]);
+        const row = result.rows[0];
+        if (!row) throw new Error("INSERT ... RETURNING returned no row"); // can't happen, but now TypeScript knows
+        return toRestaurant(row);
       } catch (error) {
         // Safety net: the service already checks for duplicate codes, but if two requests
         // arrive at exactly the same time, both could pass that check. The UNIQUE constraint

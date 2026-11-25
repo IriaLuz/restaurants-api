@@ -1,16 +1,18 @@
 {
+  // Used by your editor and by "npm run typecheck". It checks EVERYTHING, tests included,
+  // and emits nothing. The build uses tsconfig.build.json instead.
   "compilerOptions": {
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "dist",
-    "rootDir": "src",
     "strict": true,
+    "noUncheckedIndexedAccess": true, // array[0] has type "T | undefined", so you can't forget the empty case
+    "verbatimModuleSyntax": true, // forces "import type" for types, which matches how tsx and Vitest compile
+    "noEmit": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["src"],
-  "exclude": ["src/**/*.test.ts"]
+  "include": ["src", "test", "vitest.config.ts"]
 }
