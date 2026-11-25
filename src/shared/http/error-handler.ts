@@ -15,7 +15,7 @@ import { ConflictError, NotFoundError } from "../errors.js";
  *   Express's own 4xx errors -> their own status   (bad JSON 400, body too large 413, bad charset 415...)
  *   anything else            -> 500 Internal Server Error (we log it, but never send details to the user)
  */
-export const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
+export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
   // If part of the response was already sent, we can't send a new one.
   // Express's default handler then closes the connection.
   if (res.headersSent) {
@@ -49,9 +49,10 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
     return;
   }
 
-  // An unexpected error: a bug, or the database is down. Log the details for us,
-  // but send a generic message, so we never leak stack traces or SQL to users.
-  console.error(error);
+  // An unexpected error: a bug, or the database is down. Log the details for us
+  // (req.log already carries the request id), but send a generic message,
+  // so we never leak stack traces or SQL to users.
+  req.log.error({ err: error }, "Unexpected error");
   res.status(500).json({ error: "Something went wrong" });
 };
 

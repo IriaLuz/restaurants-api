@@ -2,14 +2,27 @@
 // They check what the HTTP layer does on its own: status codes, error format, unknown routes.
 // The business rules are tested in the service tests, and the SQL in the integration tests.
 import request from "supertest";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { createInMemoryRestaurantRepository } from "./modules/restaurants/restaurants.repository.memory.js";
 import { createRestaurantService, type RestaurantService } from "./modules/restaurants/restaurants.service.js";
+import { createLogger } from "./shared/logger.js";
 
 function buildApp(restaurantService: RestaurantService = createRestaurantService(createInMemoryRestaurantRepository())) {
-  return createApp({ restaurantService });
+  return createApp({ logger: createLogger("silent"), restaurantService });
 }
+
+describe("request ids", () => {
+  it("creates an X-Request-Id for every request", async () => {
+    const response = await request(buildApp()).get("/health").expect(200);
+
+    expect(response.headers["x-request-id"]).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it("keeps the X-Request-Id the caller sent", async () => {
+    await request(buildApp()).get("/health").set("X-Request-Id", "abc-123").expect("X-Request-Id", "abc-123");
+  });
+});
 
 describe("HTTP errors", () => {
   it("answers 400 with a clear message when the body isn't valid JSON", async () => {
@@ -41,7 +54,6 @@ describe("HTTP errors", () => {
   });
 
   it("answers 500 with a generic message, and no details, for an unexpected error", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {}); // keep the test output clean
     const brokenService = {
       ...createRestaurantService(createInMemoryRestaurantRepository()),
       listRestaurants: async () => {

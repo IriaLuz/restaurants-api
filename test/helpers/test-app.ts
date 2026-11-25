@@ -4,6 +4,7 @@ import type pg from "pg";
 import { createApp } from "../../src/app.js";
 import { createDependencies } from "../../src/composition-root.js";
 import { createPool } from "../../src/shared/db/pool.js";
+import { createLogger } from "../../src/shared/logger.js";
 
 export interface TestContext {
   pool: pg.Pool;
@@ -16,7 +17,7 @@ export function createTestContext(): TestContext {
   if (!url) throw new Error("TEST_DATABASE_URL is not set");
 
   const pool = createPool(url);
-  const app = createApp(createDependencies(pool));
+  const app = createApp(createDependencies({ pool, logger: createLogger("silent") })); // no logs in test output
   return { pool, app };
 }
 

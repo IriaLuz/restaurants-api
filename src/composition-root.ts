@@ -1,5 +1,6 @@
 import type pg from "pg";
 import type { AppDependencies } from "./app.js";
+import type { Logger } from "./shared/logger.js";
 import { createPostgresRestaurantRepository } from "./modules/restaurants/restaurants.repository.postgres.js";
 import { createRestaurantService } from "./modules/restaurants/restaurants.service.js";
 
@@ -11,8 +12,8 @@ import { createRestaurantService } from "./modules/restaurants/restaurants.servi
  * This is the only file that decides "the real app uses PostgreSQL".
  * To use a different database, you'd write a new repository and change ONE line here.
  */
-export function createDependencies(pool: pg.Pool): AppDependencies {
+export function createDependencies({ pool, logger }: { pool: pg.Pool; logger: Logger }): AppDependencies {
   const restaurantRepository = createPostgresRestaurantRepository(pool);
   const restaurantService = createRestaurantService(restaurantRepository);
-  return { restaurantService };
+  return { logger, restaurantService };
 }
