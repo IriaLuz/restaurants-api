@@ -28,14 +28,14 @@ curl -X POST http://localhost:3000/restaurants \
 
 ## Los endpoints
 
-| Método | Ruta | Qué hace | Respuestas |
-| --- | --- | --- | --- |
-| GET | `/health` | Comprueba que el servidor está vivo | 200 |
-| POST | `/restaurants` | Crea un restaurante | 201, 400, 409 |
-| GET | `/restaurants?city=London` | Lista restaurantes, opcionalmente por ciudad | 200, 400 |
-| GET | `/restaurants/:id` | Devuelve uno | 200, 400, 404 |
-| PATCH | `/restaurants/:id` | Cambia `name`, `city` o `isActive` | 200, 400, 404 |
-| DELETE | `/restaurants/:id` | Borra uno inactivo | 204, 400, 404, 409 |
+| Método | Ruta                       | Qué hace                                     | Respuestas         |
+| ------ | -------------------------- | -------------------------------------------- | ------------------ |
+| GET    | `/health`                  | Comprueba que el servidor está vivo          | 200                |
+| POST   | `/restaurants`             | Crea un restaurante                          | 201, 400, 409      |
+| GET    | `/restaurants?city=London` | Lista restaurantes, opcionalmente por ciudad | 200, 400           |
+| GET    | `/restaurants/:id`         | Devuelve uno                                 | 200, 400, 404      |
+| PATCH  | `/restaurants/:id`         | Cambia `name`, `city` o `isActive`           | 200, 400, 404      |
+| DELETE | `/restaurants/:id`         | Borra uno inactivo                           | 204, 400, 404, 409 |
 
 **Reglas de negocio** (están en el service):
 
@@ -79,19 +79,19 @@ Así recorre el código un `POST /restaurants`:
 
 ## Qué hace cada capa (y qué NO hace)
 
-| Capa | Archivo | Su trabajo | Lo que NO hace |
-| --- | --- | --- | --- |
-| Routes | `restaurantRoutes.ts` | Une cada URL y método con un handler | Lógica de ningún tipo |
-| Controller | `restaurantController.ts` | Valida la entrada, llama al service y elige el código HTTP | Reglas de negocio o SQL |
-| Validación | `restaurantSchemas.ts` | Define qué datos son válidos (Zod) | Comprobar cosas de la base de datos |
-| Service | `restaurantService.ts` | Las reglas de negocio | Saber de HTTP (req, res, status) o de SQL |
-| Repository (contrato) | `restaurantRepository.ts` | Dice QUÉ se puede hacer con los datos | Decir CÓMO |
-| Repository (Postgres) | `postgresRestaurantRepository.ts` | El SQL y la traducción entre filas y objetos | Reglas de negocio |
-| Repository (memoria) | `inMemoryRestaurantRepository.ts` | Lo mismo, pero en un `Map`, para los tests | — |
-| Errores | `errors.ts` + `http/errorHandler.ts` | Errores con nombre de negocio, y un solo sitio que los traduce a HTTP | — |
-| Composition root | `compositionRoot.ts` | Conecta pool → repository → service | — |
+| Capa                  | Archivo                              | Su trabajo                                                            | Lo que NO hace                            |
+| --------------------- | ------------------------------------ | --------------------------------------------------------------------- | ----------------------------------------- |
+| Routes                | `restaurantRoutes.ts`                | Une cada URL y método con un handler                                  | Lógica de ningún tipo                     |
+| Controller            | `restaurantController.ts`            | Valida la entrada, llama al service y elige el código HTTP            | Reglas de negocio o SQL                   |
+| Validación            | `restaurantSchemas.ts`               | Define qué datos son válidos (Zod)                                    | Comprobar cosas de la base de datos       |
+| Service               | `restaurantService.ts`               | Las reglas de negocio                                                 | Saber de HTTP (req, res, status) o de SQL |
+| Repository (contrato) | `restaurantRepository.ts`            | Dice QUÉ se puede hacer con los datos                                 | Decir CÓMO                                |
+| Repository (Postgres) | `postgresRestaurantRepository.ts`    | El SQL y la traducción entre filas y objetos                          | Reglas de negocio                         |
+| Repository (memoria)  | `inMemoryRestaurantRepository.ts`    | Lo mismo, pero en un `Map`, para los tests                            | —                                         |
+| Errores               | `errors.ts` + `http/errorHandler.ts` | Errores con nombre de negocio, y un solo sitio que los traduce a HTTP | —                                         |
+| Composition root      | `compositionRoot.ts`                 | Conecta pool → repository → service                                   | —                                         |
 
-**La idea clave:** el service solo conoce la *interfaz* `RestaurantRepository`, no Postgres. Por eso los tests unitarios le pasan el repositorio en memoria y funcionan sin base de datos. Si mañana cambias de base de datos, escribes otro repositorio y cambias **una línea** en `compositionRoot.ts`.
+**La idea clave:** el service solo conoce la _interfaz_ `RestaurantRepository`, no Postgres. Por eso los tests unitarios le pasan el repositorio en memoria y funcionan sin base de datos. Si mañana cambias de base de datos, escribes otro repositorio y cambias **una línea** en `compositionRoot.ts`.
 
 ## Estructura de carpetas
 
@@ -141,5 +141,5 @@ git push -u origin main
 - **Pool:** un grupo de conexiones a la base de datos que se reutilizan.
 - **Parámetros (`$1`, `$2`):** la forma segura de meter valores en SQL. Evitan la inyección de SQL.
 - **Transacción:** varios cambios que pasan todos juntos o ninguno (mira `runMigrations.ts`).
-- **Inyección de dependencias:** una pieza *recibe* lo que necesita en vez de crearlo. Por ejemplo, el service recibe el repository.
+- **Inyección de dependencias:** una pieza _recibe_ lo que necesita en vez de crearlo. Por ejemplo, el service recibe el repository.
 - **Idempotente:** hacer lo mismo dos veces da el mismo resultado que hacerlo una. `PUT` debería serlo.

@@ -16,7 +16,8 @@ export function createRequestLogger(logger: Logger) {
     logger,
     genReqId(req, res) {
       const incoming = req.headers["x-request-id"];
-      const id = typeof incoming === "string" && incoming.length > 0 && incoming.length <= 128 ? incoming : randomUUID();
+      const id =
+        typeof incoming === "string" && incoming.length > 0 && incoming.length <= 128 ? incoming : randomUUID();
       res.setHeader("X-Request-Id", id);
       return id;
     },

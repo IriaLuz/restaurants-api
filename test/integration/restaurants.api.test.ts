@@ -39,13 +39,18 @@ describe("Restaurants API (integration)", () => {
   it("returns 409 for a duplicate code", async () => {
     await request(app).post("/restaurants").send(camden).expect(201);
 
-    await request(app).post("/restaurants").send({ ...camden, code: "CAMDEN" }).expect(409);
+    await request(app)
+      .post("/restaurants")
+      .send({ ...camden, code: "CAMDEN" })
+      .expect(409);
   });
 
   it("lets only one of two simultaneous requests with the same code through (the UNIQUE constraint)", async () => {
     const [first, second] = await Promise.all([
       request(app).post("/restaurants").send(camden),
-      request(app).post("/restaurants").send({ ...camden, code: "CAMDEN" }),
+      request(app)
+        .post("/restaurants")
+        .send({ ...camden, code: "CAMDEN" }),
     ]);
 
     expect([first.status, second.status].sort()).toEqual([201, 409]);
@@ -64,7 +69,10 @@ describe("Restaurants API (integration)", () => {
 
   it("pages through the list with limit and offset", async () => {
     for (const name of ["A", "B", "C"]) {
-      await request(app).post("/restaurants").send({ code: `R${name}`, name, city: "London" }).expect(201);
+      await request(app)
+        .post("/restaurants")
+        .send({ code: `R${name}`, name, city: "London" })
+        .expect(201);
     }
 
     const response = await request(app).get("/restaurants").query({ limit: 2, offset: 2 }).expect(200);

@@ -11,7 +11,10 @@ import { createLogger } from "./shared/logger.js";
 function buildApp({
   restaurantService = createRestaurantService(createInMemoryRestaurantRepository()),
   checkDatabase = async () => {},
-}: { restaurantService?: RestaurantService; checkDatabase?: () => Promise<void> } = {}) {
+}: {
+  restaurantService?: RestaurantService;
+  checkDatabase?: () => Promise<void>;
+} = {}) {
   return createApp({ logger: createLogger("silent"), checkDatabase, restaurantService });
 }
 
@@ -95,7 +98,9 @@ describe("HTTP errors", () => {
       },
     };
 
-    const response = await request(buildApp({ restaurantService: brokenService })).get("/restaurants").expect(500);
+    const response = await request(buildApp({ restaurantService: brokenService }))
+      .get("/restaurants")
+      .expect(500);
 
     expect(response.body).toEqual({ error: "Something went wrong" });
   });

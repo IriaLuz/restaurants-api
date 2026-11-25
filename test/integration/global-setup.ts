@@ -3,8 +3,8 @@
 // instead of letting every test fail with a confusing connection error.
 import "dotenv/config";
 import { createPool } from "../../src/shared/db/pool.js";
-import { createLogger } from "../../src/shared/logger.js";
 import { runMigrations } from "../../src/shared/db/run-migrations.js";
+import { createLogger } from "../../src/shared/logger.js";
 
 export default async function setup(): Promise<void> {
   const url = process.env.TEST_DATABASE_URL;

@@ -88,14 +88,14 @@ Responde `200` con `{ "isOpen": true }` o `{ "isOpen": false }`.
 
 ### Errores esperados
 
-| Situación | Respuesta |
-| --- | --- |
-| El restaurante no existe | 404 |
-| El id no es un UUID | 400 |
-| `dayOfWeek` fuera de 1–7, o una hora con formato incorrecto | 400 |
-| `opensAt` no es anterior a `closesAt` | 400 |
-| Dos franjas del mismo día se solapan | 400 |
-| Falta `at` en `/is-open`, o no es una fecha válida | 400 |
+| Situación                                                   | Respuesta |
+| ----------------------------------------------------------- | --------- |
+| El restaurante no existe                                    | 404       |
+| El id no es un UUID                                         | 400       |
+| `dayOfWeek` fuera de 1–7, o una hora con formato incorrecto | 400       |
+| `opensAt` no es anterior a `closesAt`                       | 400       |
+| Dos franjas del mismo día se solapan                        | 400       |
+| Falta `at` en `/is-open`, o no es una fecha válida          | 400       |
 
 ### Archivos que vas a crear
 

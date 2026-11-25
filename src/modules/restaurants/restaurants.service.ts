@@ -1,8 +1,8 @@
 import { UniqueViolationError } from "../../shared/db/errors.js";
 import { ConflictError, NotFoundError } from "../../shared/errors.js";
 import type { Page, PageRequest } from "../../shared/pagination.js";
-import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 import type { RestaurantRepository } from "./restaurants.repository.js";
+import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 
 /**
  * THE SERVICE: the business rules live here.

@@ -1,8 +1,8 @@
 import pg from "pg";
 import { UniqueViolationError } from "../../shared/db/errors.js";
 import type { PageRequest } from "../../shared/pagination.js";
-import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 import type { RestaurantRepository } from "./restaurants.repository.js";
+import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
 
 /**
  * THE REPOSITORY (real implementation): the only file that knows about SQL and PostgreSQL.
