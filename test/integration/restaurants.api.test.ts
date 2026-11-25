@@ -1,31 +1,17 @@
 // INTEGRATION TESTS: they test all the layers together, for real:
 //   HTTP request -> routes -> controller -> service -> Postgres repository -> real database
-// They use a SEPARATE test database (TEST_DATABASE_URL), which is wiped before every test.
+// They use a SEPARATE test database (TEST_DATABASE_URL), which is emptied before every test.
 // Run them with: npm run test:integration (the database must be running: docker compose up -d)
-import "dotenv/config";
-import type pg from "pg";
+// The migrations already ran once, in test/integration/global-setup.ts.
 import request from "supertest";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createApp } from "../../src/app.js";
-import { createDependencies } from "../../src/composition-root.js";
-import { createPool } from "../../src/shared/db/pool.js";
-import { runMigrations } from "../../src/shared/db/run-migrations.js";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { createTestContext, resetDatabase } from "../helpers/test-app.js";
 
-const testDatabaseUrl = process.env.TEST_DATABASE_URL;
-
-// If there's no test database configured, skip these tests instead of failing.
-describe.skipIf(!testDatabaseUrl)("Restaurants API (integration)", () => {
-  let pool: pg.Pool;
-  let app: ReturnType<typeof createApp>;
-
-  beforeAll(async () => {
-    pool = createPool(testDatabaseUrl!);
-    await runMigrations(pool); // make sure the tables exist
-    app = createApp(createDependencies(pool)); // the REAL app, with the REAL Postgres repository
-  });
+describe("Restaurants API (integration)", () => {
+  const { pool, app } = createTestContext();
 
   beforeEach(async () => {
-    await pool.query("TRUNCATE restaurants"); // start every test with an empty table
+    await resetDatabase(pool); // start every test with empty tables
   });
 
   afterAll(async () => {
