@@ -1,0 +1,22 @@
+# Starts PostgreSQL in Docker, so you don't need to install it on your computer.
+#   docker compose up -d     -> start the database in the background
+#   docker compose down      -> stop it (your data stays in the "pgdata" volume)
+#
+# It creates two databases:
+#   - restaurants       -> the one the app uses when you run "npm run dev"
+#   - restaurants_test  -> the one the integration tests use (they wipe it every time)
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: practice
+      POSTGRES_PASSWORD: practice
+      POSTGRES_DB: restaurants
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql
+
+volumes:
+  pgdata:

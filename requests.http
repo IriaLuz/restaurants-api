@@ -1,0 +1,66 @@
+# Example requests. In VS Code, install the "REST Client" extension
+# and click "Send Request" above each one. Start the API first with: npm run dev
+
+@baseUrl = http://localhost:3000
+
+### Is the server running?
+GET {{baseUrl}}/health
+
+### Create a restaurant (201). The code is saved in uppercase.
+POST {{baseUrl}}/restaurants
+Content-Type: application/json
+
+{
+  "code": "camden",
+  "name": "Nando's Camden",
+  "city": "London"
+}
+
+### Create another one, in a different city
+POST {{baseUrl}}/restaurants
+Content-Type: application/json
+
+{
+  "code": "MCR-PICCADILLY",
+  "name": "Nando's Piccadilly",
+  "city": "Manchester"
+}
+
+### Same code again (409 Conflict)
+POST {{baseUrl}}/restaurants
+Content-Type: application/json
+
+{
+  "code": "CAMDEN",
+  "name": "Another Camden",
+  "city": "London"
+}
+
+### Invalid body (400, with the fields that are wrong)
+POST {{baseUrl}}/restaurants
+Content-Type: application/json
+
+{
+  "code": "!",
+  "name": ""
+}
+
+### List all restaurants (200)
+GET {{baseUrl}}/restaurants
+
+### List restaurants in one city (200)
+GET {{baseUrl}}/restaurants?city=London
+
+### Get one restaurant. Paste an id from the responses above.
+GET {{baseUrl}}/restaurants/PASTE-AN-ID-HERE
+
+### Deactivate it (200). Only name, city and isActive can change.
+PATCH {{baseUrl}}/restaurants/PASTE-AN-ID-HERE
+Content-Type: application/json
+
+{
+  "isActive": false
+}
+
+### Delete it (204). If it's still active you get a 409.
+DELETE {{baseUrl}}/restaurants/PASTE-AN-ID-HERE
