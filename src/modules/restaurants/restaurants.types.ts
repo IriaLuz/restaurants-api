@@ -19,8 +19,16 @@ export interface NewRestaurant {
 }
 
 /** The fields you're allowed to change after creating a restaurant. The code can't change. */
-export type RestaurantChanges = Partial<Pick<Restaurant, "name" | "city" | "isActive">>;
+export type RestaurantChanges = Partial<
+  Pick<Restaurant, "name" | "city" | "isActive">
+>;
 
 export interface RestaurantFilter {
   city?: string;
+}
+
+export interface OpeningHourSlot {
+  dayOfWeek: number;
+  opensAt: string;
+  closesAt: string;
 }

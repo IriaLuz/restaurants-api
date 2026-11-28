@@ -1,5 +1,11 @@
 import type { Page, PageRequest } from "../../shared/pagination.js";
-import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
+import type {
+  NewRestaurant,
+  OpeningHourSlot,
+  Restaurant,
+  RestaurantChanges,
+  RestaurantFilter,
+} from "./restaurants.types.js";
 
 /**
  * THE REPOSITORY "CONTRACT" (also called a "port" or an interface).
@@ -24,4 +30,9 @@ export interface RestaurantRepository {
   update(id: string, changes: RestaurantChanges): Promise<Restaurant | null>;
   /** Deletes it only if it exists AND is inactive, in one atomic step. Returns false if nothing was deleted. */
   deleteIfInactive(id: string): Promise<boolean>;
+
+  replaceOpeningHours(
+    restaurantId: string,
+    slots: OpeningHourSlot[]
+  ): Promise<OpeningHourSlot[]>;
 }

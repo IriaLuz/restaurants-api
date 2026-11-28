@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { UniqueViolationError } from "../../shared/db/errors.js";
 import type { RestaurantRepository } from "./restaurants.repository.js";
-import type { Restaurant } from "./restaurants.types.js";
+import type { OpeningHourSlot, Restaurant } from "./restaurants.types.js";
 
 /**
  * A FAKE repository that keeps restaurants in a Map instead of a database.
@@ -14,13 +14,22 @@ import type { Restaurant } from "./restaurants.types.js";
  */
 export function createInMemoryRestaurantRepository(): RestaurantRepository {
   const restaurants = new Map<string, Restaurant>();
+  const openingHours = new Map<string, OpeningHourSlot[]>();
 
   return {
     async create(newRestaurant) {
-      if ([...restaurants.values()].some((existing) => existing.code === newRestaurant.code)) {
+      if (
+        [...restaurants.values()].some(
+          (existing) => existing.code === newRestaurant.code
+        )
+      ) {
         throw new UniqueViolationError("code");
       }
-      const restaurant: Restaurant = { ...newRestaurant, id: randomUUID(), createdAt: new Date() };
+      const restaurant: Restaurant = {
+        ...newRestaurant,
+        id: randomUUID(),
+        createdAt: new Date(),
+      };
       restaurants.set(restaurant.id, restaurant);
       return restaurant;
     },
@@ -32,14 +41,21 @@ export function createInMemoryRestaurantRepository(): RestaurantRepository {
     async list(filter, page) {
       const matching = [...restaurants.values()]
         .filter((restaurant) => !filter.city || restaurant.city === filter.city)
-        .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
-      return { items: matching.slice(page.offset, page.offset + page.limit), total: matching.length };
+        .sort(
+          (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)
+        );
+      return {
+        items: matching.slice(page.offset, page.offset + page.limit),
+        total: matching.length,
+      };
     },
 
     async update(id, changes) {
       const restaurant = restaurants.get(id);
       if (!restaurant) return null;
-      const defined = Object.fromEntries(Object.entries(changes).filter(([, value]) => value !== undefined));
+      const defined = Object.fromEntries(
+        Object.entries(changes).filter(([, value]) => value !== undefined)
+      );
       const updated = { ...restaurant, ...defined };
       restaurants.set(id, updated);
       return updated;
@@ -49,6 +65,15 @@ export function createInMemoryRestaurantRepository(): RestaurantRepository {
       const restaurant = restaurants.get(id);
       if (!restaurant || restaurant.isActive) return false;
       return restaurants.delete(id);
+    },
+
+    async replaceOpeningHours(restaurantId, slots) {
+      openingHours.set(restaurantId, slots);
+      return slots;
+    },
+
+    async getOpeningHours(restaurantId) {
+      return openingHours.get(restaurantId) ?? [];
     },
   };
 }

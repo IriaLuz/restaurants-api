@@ -2,7 +2,13 @@ import { UniqueViolationError } from "../../shared/db/errors.js";
 import { ConflictError, NotFoundError } from "../../shared/errors.js";
 import type { Page, PageRequest } from "../../shared/pagination.js";
 import type { RestaurantRepository } from "./restaurants.repository.js";
-import type { NewRestaurant, Restaurant, RestaurantChanges, RestaurantFilter } from "./restaurants.types.js";
+import type {
+  NewRestaurant,
+  OpeningHourSlot,
+  Restaurant,
+  RestaurantChanges,
+  RestaurantFilter,
+} from "./restaurants.types.js";
 
 /**
  * THE SERVICE: the business rules live here.
@@ -33,13 +39,18 @@ export function createRestaurantService(repository: RestaurantRepository) {
         return await repository.create({ ...input, code });
       } catch (error) {
         if (error instanceof UniqueViolationError) {
-          throw new ConflictError(`A restaurant with code ${code} already exists`);
+          throw new ConflictError(
+            `A restaurant with code ${code} already exists`
+          );
         }
         throw error;
       }
     },
 
-    async listRestaurants(filter: RestaurantFilter, page: PageRequest): Promise<Page<Restaurant>> {
+    async listRestaurants(
+      filter: RestaurantFilter,
+      page: PageRequest
+    ): Promise<Page<Restaurant>> {
       return repository.list(filter, page);
     },
 
@@ -49,7 +60,21 @@ export function createRestaurantService(repository: RestaurantRepository) {
       return restaurant;
     },
 
-    async updateRestaurant(id: string, changes: RestaurantChanges): Promise<Restaurant> {
+    async replaceOpeningHours(
+      restaurantId: string,
+      slots: OpeningHourSlot[]
+    ): Promise<OpeningHourSlot[]> {
+      const sortedSlots = [...slots].sort(
+        (a, b) =>
+          a.dayOfWeek - b.dayOfWeek || a.opensAt.localeCompare(b.opensAt)
+      );
+      return repository.replaceOpeningHours(restaurantId, sortedSlots);
+    },
+
+    async updateRestaurant(
+      id: string,
+      changes: RestaurantChanges
+    ): Promise<Restaurant> {
       const updated = await repository.update(id, changes);
       if (!updated) throw new NotFoundError("Restaurant");
       return updated;
@@ -63,7 +88,9 @@ export function createRestaurantService(repository: RestaurantRepository) {
       // Nothing was deleted. Find out why, to give the right error.
       const restaurant = await repository.findById(id);
       if (!restaurant) throw new NotFoundError("Restaurant");
-      throw new ConflictError("An active restaurant can't be deleted. Deactivate it first.");
+      throw new ConflictError(
+        "An active restaurant can't be deleted. Deactivate it first."
+      );
     },
   };
 }
